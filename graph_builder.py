@@ -18,6 +18,12 @@ try:
         TRANSFER_EDGES = pickle.load(f)
 
     print("Data loaded successfully.")
+    
+    # first_key = list(NETWORK_EDGES.keys())[0]
+    # print(f"DEBUG: Network Edge Key Type: {type(first_key[0])} Value: '{first_key[0]}'")
+
+    # first_transfer = list(TRANSFER_EDGES.keys())[0]
+    # print(f"DEBUG: Transfer Key Type: {type(first_transfer[0])} Value: '{first_transfer[0]}'")
 
 except FileNotFoundError:
     print("Error: Could not find .pkl files in /agg_data folder.")

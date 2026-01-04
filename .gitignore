@@ -4,4 +4,5 @@ agg_data/
 .venv/
 __pycache__/
 tempCodeRunnerFile.py
-analysis.py
+testing.ipynb
+transfers.process.py
