@@ -2,3 +2,4 @@ txt_data/
 csv_data/
 agg_data/
 .venv/
+graph_builder.py
