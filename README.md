@@ -6,7 +6,11 @@ This project will be an interactive dashboard that lets users visualize the resi
 Users will then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a snowstorm by slowing down buses, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch in real-time as the travel bubble shrinks. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
 ### Current Project Status
-This project is current in the preliminary stages. I have create a dictionary of transit and transfer edges that I am working on feeding into Djikstra's Algorithm in order to determine the shortest path between points using transit. This will allow me to create isochrones, or "travel bubbles".
+This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. 
+
+![Isochrone Image](git_data/isochrone.png)
+
+The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water!). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and
 
 ### Downloading GTFS Data
 This project requires updated Translink GTFS Data. 
@@ -16,4 +20,4 @@ This project requires updated Translink GTFS Data.
 3. Run txt_to_csv.py
 
 ### Running Files
-Currently there is no UI! In this development stage, you can run app.py and change the inputs in an editor.
+Currently there is no UI! In this development stage, you can run simple_app.py and follow the terminal commands. To change some parameters like walking speed and maximum allowable walk distance, you can edit them in a code editor.
