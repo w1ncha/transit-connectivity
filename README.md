@@ -10,7 +10,7 @@ This project is currently in progress. I have completed the preliminary backend,
 
 ![Isochrone Image](git_data/isochrone.png)
 
-The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water!). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and
+The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water!). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
 
 ### Downloading GTFS Data
 This project requires updated Translink GTFS Data. 
