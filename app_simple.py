@@ -150,7 +150,7 @@ route_line = analysis.get_route(
     max_walk_km=1.0
 )
 
-if not route_line:
+if route_line is None or route_line.empty:
     print("Error. Please try again.")
 else:
     route_line.to_file("output/route.geojson", driver="GeoJSON")
