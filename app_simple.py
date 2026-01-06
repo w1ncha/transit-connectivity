@@ -102,7 +102,7 @@ while True:
             
             geoprocessing.subtract_water()
 
-            print("A geojson file has been generated for input to GIS in '/output'.")
+            print("A geojson file has been generated for input to GIS in 'output/'.")
             break
         else:
             print("Failed to generate polygon.")
@@ -136,7 +136,7 @@ while True:
         print("Invalid input. Please enter numeric degrees.")
         continue
 
-analysis.get_route(
+route_line = analysis.get_route(
     G = current_graph,
     start_lat = start_lat,
     start_lon = start_lon,
@@ -145,3 +145,9 @@ analysis.get_route(
     walk_speed_mps=1.0, 
     max_walk_km=1.0
 )
+
+if not route_line:
+    print("Error. Please try again.")
+else:
+    route_line.to_file("output/route.geojson", driver="GeoJSON")
+    print("A geojson file has been generated in 'output/' detailing the route.")
