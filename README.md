@@ -6,11 +6,11 @@ This project will be an interactive dashboard that lets users visualize the resi
 Users will then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a snowstorm by slowing down buses, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch in real-time as the travel bubble shrinks. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
 ### Current Project Status
-This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. 
+This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. After creating these bubbles, you can input a second coordinate into the program and it will return the path to get there using transit, as well as a line you can import to GIS that visualizes the path.
 
 ![Isochrone Image](git_data/isochrone.png)
 
-The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water!). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
+The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water and does not stop you from traveling over water!). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
 
 ### Downloading GTFS Data
 This project requires updated Translink GTFS Data. 
@@ -20,13 +20,10 @@ This project requires updated Translink GTFS Data.
 3. Run txt_to_csv.py
 
 ### Running Files
-Currently there is no UI! In this development stage, you can run simple_app.py and follow the terminal commands. To change some parameters like walking speed and maximum allowable walk distance, you can edit them in a code editor.
-<<<<<<< HEAD
+Currently there is no GUI! In this development stage, you can run simple_app.py and follow the terminal commands. To change some parameters like walking speed and maximum allowable walk distance, you can edit them in a code editor.
 
 ### Sources
 This project uses open data files from various governments:
 - [Province of BC Boundary Terrestrial](https://open.canada.ca/data/dataset/30aeb5c1-4285-46c8-b60b-15b1a6f4258b)
 - [Metro Vancouver Administrative Boundaries](https://open-data-portal-metrovancouver.hub.arcgis.com/datasets/1c86f57d9fcc4fc3a8134328b07f07e6_10/explore?location=49.283369%2C-123.061408%2C9.87)
 - [Province of BC Freshwater Atlas Rivers](https://catalogue.data.gov.bc.ca/dataset/f7dac054-efbf-402f-ab62-6fc4b32a619e)
-=======
->>>>>>> 94550973a6961741ed0c7a6adf74cf6b9f8a47c2
