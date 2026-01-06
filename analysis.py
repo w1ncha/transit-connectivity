@@ -5,6 +5,7 @@ import pickle
 import numpy as np
 import sys
 from shapely.geometry import Point
+from shapely.geometry import LineString
 from sklearn.neighbors import BallTree
 
 # ===========================
@@ -14,7 +15,7 @@ from sklearn.neighbors import BallTree
 print("Initializing Analysis Engine...")
 
 try:
-    with open('agg_data/stops.pkl', 'rb') as f:
+    with open('data/stops.pkl', 'rb') as f:
         STOPS_DICT = pickle.load(f)
         
     stops_df = pd.DataFrame.from_dict(STOPS_DICT, orient='index')
@@ -35,18 +36,20 @@ except Exception as e:
 # CORE FUNCTIONS
 # =================
 
+# ISOCHRONE FUNCTION
+
 def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1.0, max_walk_km=1.0):
     """
     Calculates the reachable area (Isochrone) from a specific point.
     """
     
-    # --- 1. PREPARE VARIABLES ---
+    # 1. PREPARE VARIABLES
     
     # FIX: Convert Meters/Second to Meters/Minute
     # 1.0 m/s * 60 = 60 m/min
     walk_speed_mpm = walk_speed_mps * 60.0  
     
-    # --- 2. SNAP TO NETWORK ---
+    # 2. SNAP TO NETWORK
     
     user_rad = np.deg2rad([[start_lat, start_lon]])
     radius_rad = max_walk_km / 6371.0
@@ -71,7 +74,7 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
             # We add edges to Street Nodes (which are just the stop_id string)
             G.add_edge(user_node, stop_id, weight=walk_time_min)
 
-    # --- 3. RUN DIJKSTRA ---
+    # 3. RUN DIJKSTRA
     
     try:
         reachable_nodes = nx.single_source_dijkstra_path_length(
@@ -98,16 +101,11 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
         return None
         
     
-    # --- 4. CREATE ISOCHRONE (The Fix is Here) ---
-    
-    # DEDUPLICATION: 
-    # The Expanded Graph has nodes like "1001" (Street) and "1001_99B" (Bus).
-    # We want the BEST time to the physical location "1001".
+    # 4. CREATE ISOCHRONE
     
     best_times = {}
 
     for node, time_taken in reachable_nodes.items():
-        # Strip route suffix to get physical ID (e.g., "1001_99B" -> "1001")
         base_stop_id = str(node).split('_')[0]
         
         if base_stop_id not in STOPS_DICT:
@@ -157,6 +155,137 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
     
     return blob_latlon[0]
 
+# ROUTING FUNCTION
+def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max_walk_km=1.0):
+    """
+    Calculates the shortest path between two points.
+    Returns:
+       1. GeoDataFrame (LineString) for mapping
+       2. Prints the textual path to the terminal
+    """
+    
+    # 1. PREPARE VARIABLES
+    walk_speed_mpm = walk_speed_mps * 60.0
+    
+    # 2. SNAP START POINT (First Mile)
+    start_rad = np.deg2rad([[start_lat, start_lon]])
+    radius_rad = max_walk_km / 6371.0
+    
+    s_indices, s_dists = TREE.query_radius(start_rad, r=radius_rad, return_distance=True)
+    
+    if len(s_indices[0]) == 0:
+        print("Error: Start point too far from transit.")
+        return None
+
+    # Create Virtual Start Node
+    start_node = "USER_START"
+    
+    for idx, dist_rad in zip(s_indices[0], s_dists[0]):
+        stop_id = str(stops_df.iloc[idx]['stop_id'])
+        dist_meters = dist_rad * 6371000
+        walk_time = dist_meters / walk_speed_mpm
+        
+        # Add edge: Start -> Stop
+        G.add_edge(start_node, stop_id, weight=walk_time, type='walk')
+
+    # 3. SNAP END POINT (Last Mile)
+    end_rad = np.deg2rad([[end_lat, end_lon]])
+    e_indices, e_dists = TREE.query_radius(end_rad, r=radius_rad, return_distance=True)
+    
+    if len(e_indices[0]) == 0:
+        print("Error: End point too far from transit.")
+        G.remove_node(start_node)
+        return None
+
+    # Create Virtual End Node
+    end_node = "USER_END"
+    
+    for idx, dist_rad in zip(e_indices[0], e_dists[0]):
+        stop_id = str(stops_df.iloc[idx]['stop_id'])
+        dist_meters = dist_rad * 6371000
+        walk_time = dist_meters / walk_speed_mpm
+        
+        # Add edge: Stop -> End
+        G.add_edge(stop_id, end_node, weight=walk_time, type='walk')
+
+    # 4. RUN SHORTEST PATH
+    try:
+        node_path = nx.shortest_path(G, source=start_node, target=end_node, weight='weight')
+        total_time = nx.shortest_path_length(G, source=start_node, target=end_node, weight='weight')
+    except nx.NetworkXNoPath:
+        print("No path found between points.")
+        G.remove_node(start_node)
+        G.remove_node(end_node)
+        return None
+
+    # 5. CLEANUP GRAPH
+    G.remove_node(start_node)
+    G.remove_node(end_node)
+
+# 6. PRINT TEXT INSTRUCTIONS 
+    print(f"\n--- PATH FOUND ({total_time:.1f} mins) ---")
+    
+    step_count = 1
+    
+    for i in range(len(node_path) - 1):
+        u = node_path[i]
+        v = node_path[i+1]
+        
+        # 1. (User -> First Stop)
+        if u == "USER_START":
+            stop_name = STOPS_DICT.get(v, {}).get('name', v)
+            print(f"{step_count}. Walk to {stop_name}")
+            step_count += 1
+            continue
+            
+        # 2. (Last Stop -> User)
+        if v == "USER_END":
+            print(f"{step_count}. Walk to final destination.")
+            step_count += 1
+            continue
+
+        # 3. Handle Internal Graph Edges
+        edge_data = G.get_edge_data(u, v)
+        
+        if edge_data:
+            move_type = edge_data.get('type', 'unknown')
+            weight = edge_data.get('weight', 0)
+            
+            if move_type == 'walk':
+                stop_name_v = STOPS_DICT.get(str(v), {}).get('name', v)
+                print(f"{step_count}. Walk to {stop_name_v} ({weight:.1f} min)")
+                step_count += 1
+                
+            elif move_type == 'board':
+                route = edge_data.get('route_id', 'Unknown')
+                print(f"{step_count}. Wait for {route} ({weight:.1f} min avg wait)")
+                step_count += 1
+                
+            elif move_type == 'travel':
+                base_v = v.split('_')[0]
+                stop_name_v = STOPS_DICT.get(base_v, {}).get('name', base_v)
+                print(f"   -> Ride to {stop_name_v} ({weight:.1f} min)")
+                
+            elif move_type == 'alight':
+                print(f"   -> Get off vehicle.")
+
+    # 7. CONSTRUCT GEOMETRY
+    coords = []
+    coords.append((start_lon, start_lat))
+    
+    for node in node_path:
+        if node in ["USER_START", "USER_END"]: continue
+        
+        base_id = str(node).split('_')[0]
+        
+        if base_id in STOPS_DICT:
+            info = STOPS_DICT[base_id]
+            coords.append((info['lon'], info['lat']))
+            
+    coords.append((end_lon, end_lat))
+    
+    line = LineString(coords)
+    return gpd.GeoDataFrame({'geometry': [line], 'time_min': [total_time]}, crs="EPSG:4326")
 
 # ==========================================
 # TEST SCRIPT
@@ -179,7 +308,21 @@ if __name__ == "__main__":
     if polygon:
         print("Saving 'test_isochrone.geojson'...")
         final_gdf = gpd.GeoDataFrame({'geometry': [polygon]}, crs="EPSG:4326")
-        final_gdf.to_file("agg_data/test_isochrone.geojson", driver="GeoJSON")
+        final_gdf.to_file("data/test_isochrone.geojson", driver="GeoJSON")
         print("Done! Check file in QGIS.")
     else:
         print("Failed to generate polygon.")
+
+# TEST ROUTE GENERATION
+    print("\n--- Testing Route Generation ---")
+    
+    # Destination: Waterfront Station
+    DEST_LAT = 49.2858
+    DEST_LON = -123.1115
+    
+    route_gdf = get_route(G, TEST_LAT, TEST_LON, DEST_LAT, DEST_LON)
+    
+    if route_gdf is not None:
+        print("Saving 'test_route.geojson'...")
+        route_gdf.to_file("data/test_route.geojson", driver="GeoJSON")
+        print("Done! Drag 'test_route.geojson' into QGIS.")

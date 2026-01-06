@@ -1,6 +1,6 @@
 txt_data/
 csv_data/
-agg_data/
+data/
 .venv/
 __pycache__/
 tempCodeRunnerFile.py

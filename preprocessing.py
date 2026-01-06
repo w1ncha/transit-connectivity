@@ -82,8 +82,8 @@ def process_network(day_id=1):
     edges.drop(columns=cols_to_remove, inplace=True)
     edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration']]
     edges = edges.sort_values(['route_name', 'trip_id', 'stop_sequence'])
-    # edges.to_csv('agg_data/edges.csv', index=False)
-    # routes.to_csv('agg_data/routes.csv', index=False)
+    # edges.to_csv('data/edges.csv', index=False)
+    # routes.to_csv('data/routes.csv', index=False)
 
     # create dictionary with
     # key: ('Stop_A', 'Stop_B', 'Route_Name')
@@ -112,7 +112,7 @@ def process_network(day_id=1):
 
     # save to pickle file
     print("Saving to file...")
-    with open('agg_data/network_edges.pkl', 'wb') as f:
+    with open('data/network_edges.pkl', 'wb') as f:
         pickle.dump(dict(network_edges), f)
 
     print("Done! 'network_edges.pkl' is ready.")
@@ -124,7 +124,7 @@ def process_network(day_id=1):
 def process_transfers():
 
     transfers['min_transfer_time'] //= 2
-    # transfers.to_csv('agg_data/transfers_reduced_time.csv')
+    # transfers.to_csv('data/transfers_reduced_time.csv')
 
     transfer_edges = {}
 
@@ -148,7 +148,7 @@ def process_transfers():
     print(f"Transfer dictionary complete. Created {len(transfer_edges)} unique transfer segments.")
 
     print("Saving to file...")
-    with open('agg_data/transfer_edges.pkl', 'wb') as f:
+    with open('data/transfer_edges.pkl', 'wb') as f:
         pickle.dump(transfer_edges, f)
 
     print("Done! 'transfer_edges.pkl' is ready.")
@@ -180,7 +180,7 @@ def process_stops():
     print(f"Stops dictionary complete. Created {len(stops_dict)} stops.")
 
     print("Saving to file...")
-    with open('agg_data/stops.pkl', 'wb') as f:
+    with open('data/stops.pkl', 'wb') as f:
         pickle.dump(stops_dict, f)
 
     print("Done! 'stops.pkl' is ready.")
@@ -193,7 +193,7 @@ def str_check():
     print("Checking Data Types...")
 
     # Check Network Edges
-    with open('agg_data/network_edges.pkl', 'rb') as f:
+    with open('data/network_edges.pkl', 'rb') as f:
         edges = pickle.load(f)
         first_key = list(edges.keys())[0]
         # Key structure: (u, v, route)
@@ -201,7 +201,7 @@ def str_check():
         print(f"Network Route: {type(first_key[2])} (Should be str)")
 
     # Check Transfers
-    with open('agg_data/transfer_edges.pkl', 'rb') as f:
+    with open('data/transfer_edges.pkl', 'rb') as f:
         transfers = pickle.load(f)
         first_key = list(transfers.keys())[0]
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")

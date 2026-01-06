@@ -10,11 +10,11 @@ print("Loading network data...")
 
 try:
     # Network Edges: {(u, v, route_id): [{'dept': sec, 'dur': sec}, ...]}
-    with open('agg_data/network_edges.pkl', 'rb') as f:
+    with open('data/network_edges.pkl', 'rb') as f:
         NETWORK_EDGES = pickle.load(f)
 
     # Transfer Edges: {(u, v, 'transfer'): seconds}
-    with open('agg_data/transfer_edges.pkl', 'rb') as f:
+    with open('data/transfer_edges.pkl', 'rb') as f:
         TRANSFER_EDGES = pickle.load(f)
 
     print("Data loaded successfully.")
@@ -26,7 +26,7 @@ try:
     # print(f"DEBUG: Transfer Key Type: {type(first_transfer[0])} Value: '{first_transfer[0]}'")
 
 except FileNotFoundError:
-    print("Error: Could not find .pkl files in /agg_data folder.")
+    print("Error: Could not find .pkl files in /data folder.")
     print("Did you run preprocessing.py?")
     sys.exit(1)
 
