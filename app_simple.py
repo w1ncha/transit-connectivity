@@ -1,9 +1,13 @@
 import re
 import sys
+import os
 import geopandas as gpd
 import geoprocessing
 # only run on acquiring new GTFS Data
 # import txt_to_csv
+
+output_dir = 'output'
+os.makedirs(output_dir, exist_ok=True)
 
 # DAY SELECTION
 while True:
