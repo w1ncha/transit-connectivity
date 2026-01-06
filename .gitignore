@@ -1,7 +1,8 @@
 txt_data/
 csv_data/
 data/
-output/
+output/isochrone.geojson
+output/route.geojson
 .venv/
 __pycache__/
 tempCodeRunnerFile.py
