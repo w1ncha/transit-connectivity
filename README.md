@@ -6,9 +6,13 @@ This project will be an interactive dashboard that lets users visualize the resi
 Users will then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a snowstorm by slowing down buses, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch in real-time as the travel bubble shrinks. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
 ### Current Project Status
-This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. After creating these bubbles, you can input a second coordinate into the program and it will return the path to get there using transit, as well as a line you can import to GIS that visualizes the path.
+This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. 
 
 ![Isochrone Image](git_data/isochrone.png)
+
+After creating these bubbles, you can input a second coordinate into the program and it will return the path to get there using transit, as well as a line you can import to GIS that visualizes the path.
+
+![Terminal Output Image](git_data/terminal_output.png)
 
 The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water and does not stop you from traveling over water! It also assumes you walk in straight lines, not taking streets into account.) Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
 
