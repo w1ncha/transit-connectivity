@@ -9,6 +9,19 @@ from shapely.geometry import LineString
 from sklearn.neighbors import BallTree
 
 # ===========================
+# HELPER FUNCTION
+# ===========================
+
+def check_is_in(coords, file_path):
+    check_point = Point(coords)
+    polygon = gpd.read_file(file_path)
+
+    if polygon.contains(check_point).any():
+        return True
+    else:
+        return False
+
+# ===========================
 # SETUP & DATA LOADING
 # ===========================
 
@@ -138,22 +151,34 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
     if not results:
         return None
 
-    # GeoPandas Operations
-    gdf = gpd.GeoDataFrame(results, crs="EPSG:4326")
+    # Create GeoDataFrame 
+    gdf_points = gpd.GeoDataFrame(results, crs="EPSG:4326")
     
     # Project to BC Albers (Meters) for accurate buffering
-    gdf_metric = gdf.to_crs("EPSG:3005")
+    gdf_points_metric = gdf_points.to_crs("EPSG:3005")
     
     # Buffer the points into circles
-    gdf_metric['geometry'] = gdf_metric.geometry.buffer(gdf_metric['radius'])
+    gdf_points_metric['geometry'] = gdf_points_metric.geometry.buffer(gdf_points_metric['radius'])
     
     # Merge all circles into one blob
-    blob_metric = gdf_metric.union_all()
+    blob_metric = gdf_points_metric.union_all()
     
-    # Project back to Lat/Lon
-    blob_latlon = gpd.GeoSeries([blob_metric], crs="EPSG:3005").to_crs("EPSG:4326")
-    
-    return blob_latlon[0]
+    # convert to GDF
+    gdf_single = gpd.GeoDataFrame(geometry=[blob_metric], crs="EPSG:3005")
+
+    # We must remove all parts of the polygon that are either on top of water, 
+    # or inaccessable by walking (e.g. islands)
+    gdf_land = gpd.read_file("data/METRO VANCOUVER LAND POLY.geojson")
+    gdf_land = gdf_land.to_crs("EPSG:3005")
+
+    gdf_intersection = gpd.overlay(gdf_single, gdf_land, how='intersection')
+    gdf_exploded = gdf_intersection.dissolve().explode(index_parts=False)
+    gdf_fixed = gpd.sjoin(gdf_exploded, gdf_points_metric, predicate="contains")
+    gdf_final = gdf_fixed.dissolve().to_crs("EPSG:4326")
+
+    # Debug
+    # print(type(gdf_final))
+    return gdf_final
 
 # ROUTING FUNCTION
 def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max_walk_km=1.0):
@@ -303,11 +328,10 @@ if __name__ == "__main__":
     G = graph_builder.build_graph(TEST_TIME, window_mins=60)
 
     print("Calculating Isochrone...")
-    polygon = get_isochrone(G, TEST_LAT, TEST_LON, time_budget_mins=BUDGET)
+    final_gdf = get_isochrone(G, TEST_LAT, TEST_LON, time_budget_mins=BUDGET)
     
-    if polygon:
+    if not final_gdf.empty:
         print("Saving 'test_isochrone.geojson'...")
-        final_gdf = gpd.GeoDataFrame({'geometry': [polygon]}, crs="EPSG:4326")
         final_gdf.to_file("data/test_isochrone.geojson", driver="GeoJSON")
         print("Done! Check file in QGIS.")
     else:

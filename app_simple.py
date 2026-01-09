@@ -2,7 +2,8 @@ import re
 import sys
 import os
 import geopandas as gpd
-import geoprocessing
+import analysis
+import preprocessing
 # only run on acquiring new GTFS Data
 # import txt_to_csv
 
@@ -24,14 +25,13 @@ while True:
         print("Invalid entry. Please try again.")
         continue
     
-    import preprocessing
     preprocessing.process_network(day_id = day_map[day_input])
     preprocessing.process_transfers()
     preprocessing.process_stops()
     # preprocessing.str_check()
     break # Move to the next loop
 
-# TIME SELECTIOON
+# TIME SELECTION
 while True:
     time_input = input("Please enter a time of day in format HH:MM or press Enter to exit:\n").strip()
 
@@ -67,7 +67,7 @@ while True:
         start_lat_str, start_lon_str = coords_input.split(",")
         start_lat, start_lon = float(start_lat_str.strip()), float(start_lon_str.strip())
 
-        if not geoprocessing.check_is_in((start_lon, start_lat), "data/METRO VANCOUVER LAND POLY.geojson"):
+        if not analysis.check_is_in((start_lon, start_lat), "data/METRO VANCOUVER LAND POLY.geojson"):
             print("Error: Those coordinates are outside Metro Vancouver or not on land.")
             continue
         else: 
@@ -78,7 +78,7 @@ while True:
 
 # BUDGET SELECTION
 while True:
-    budget_raw = input("Enter your time budget (an integer between 1 and 30, inclusive.) or press Enter to exit:\n").strip()
+    budget_raw = input("Enter your time budget (an integer between 1 and 60, inclusive.) or press Enter to exit:\n").strip()
     
     if not budget_raw:
         print("Exiting program...")
@@ -86,30 +86,32 @@ while True:
 
     try:
         budget_input = int(budget_raw)
-        budget_min, budget_max = 1, 30
+        budget_min, budget_max = 1, 60
 
         if not (budget_min <= budget_input <= budget_max):
             print("Invalid budget. Please try again.")
             continue
 
-        import analysis
-        polygon = analysis.get_isochrone(
+        final_gdf = analysis.get_isochrone(
             G=current_graph,
             start_lat = start_lat, 
             start_lon = start_lon, 
             time_budget_mins = budget_input, 
         )
-        if polygon:
-            print("Saving 'isochrone.geojson'...")
-            final_gdf = gpd.GeoDataFrame({'geometry': [polygon]}, crs="EPSG:4326")
-            final_gdf.to_file("data/temp_isochrone.geojson", driver="GeoJSON")
-            
-            geoprocessing.subtract_water()
 
-            print("A geojson file has been generated for input to GIS in 'output/'.")
-            break
-        else:
-            print("Failed to generate polygon.")
+        try:
+            if not final_gdf.empty:
+                print("Saving 'isochrone.geojson'...")
+                final_gdf.to_file("output/isochrone.geojson", driver="GeoJSON")
+                final_gdf.to_file("data/isochrone.geojson", driver="GeoJSON")
+
+                print("A geojson file has been generated for input to GIS in 'output/'.")
+                break
+            else:
+                print("Failed to generate polygon.")
+
+        except AttributeError:
+            sys.exit()
 
     except ValueError:
         print("Error: Try again.")
@@ -131,7 +133,7 @@ while True:
         end_lat_str, end_lon_str = coords_input.split(",")
         end_lat, end_lon = float(end_lat_str.strip()), float(end_lon_str.strip())
 
-        if not geoprocessing.check_is_in((end_lon, end_lat), "data/isochrone.geojson"):
+        if not analysis.check_is_in((end_lon, end_lat), "data/isochrone.geojson"):
             print("Error: Those coordinates are not within the isochrone.")
             continue
         else: 

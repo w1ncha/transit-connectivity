@@ -4,7 +4,7 @@
     "initial_coords": "",
     "final_coords": "",
     "time_budget": 30,
-    "walk_speed": 1.2,
+    "walk_speed": 1.0,
     "walk_distance": 1.0,
     "buffer_size": 60,
     "frequency_modifier": 1,

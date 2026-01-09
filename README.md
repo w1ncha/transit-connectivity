@@ -1,6 +1,12 @@
 ### About this project
 This is a project I am using to learn python and explore my interest in integrating programming and mathematics into transportation engineering!
 
+Have you ever come across one of these boards downtown, showing how far you can walk within five minutes?
+
+![Five Minute Walk](git_data/inspiration.jpg)
+
+What if you could customize these to show how far you can get in any amount of time, using not only your legs, but also transit! And what if you could play with factors like bus frequency, infrastructure failure, and walk speed? That's exactly what this project is!
+
 This project will be an interactive dashboard that lets users visualize the resiliency of the Metro Vancouver transit network. By selecting a specific location and time of day, the dashboard will generate a 'travel bubble' on the map, showing exactly how far a person can get within a set time limit using transit (busses, Skytrain, etc.).
 
 Users will then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a snowstorm by slowing down buses, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch in real-time as the travel bubble shrinks. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
@@ -14,7 +20,7 @@ After creating these bubbles, you can input a second coordinate into the program
 
 ![Terminal Output Image](git_data/terminal_output.png)
 
-The next steps for me are to iron out some bugs (for example, the program currently assumes you can walk on water and does not stop you from traveling over water! It also assumes you walk in straight lines, not taking streets into account.) Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
+The next steps for me are to iron out some bugs (the program currently draws straight lines between bus stops, making express routes look strange when visualized). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
 
 ### Downloading GTFS Data
 This project requires updated Translink GTFS Data. 
