@@ -3,14 +3,16 @@ import pandas as pd
 # import os
 import pickle
 from collections import defaultdict
+import pprint
+
 
 # =======================
 # LOADING DATA
 # =======================
 
 """
-path = 'csv_data'
-data_files = glob.glob(os.path.join(path, "*.csv"))
+path = 'txt_data'
+data_files = glob.glob(os.path.join(path, "*.txt"))
 
 data = {}
 
@@ -19,11 +21,11 @@ for f in data_files:
     data[file_name] = pd.read_csv(f)
 """
 
-trips = pd.read_csv('csv_data/trips.csv')
-stop_times = pd.read_csv('csv_data/stop_times.csv', dtype={'stop_id': str})
-stops = pd.read_csv('csv_data/stops.csv', dtype={'stop_id': str})
-routes = pd.read_csv('csv_data/routes.csv')
-transfers = pd.read_csv('csv_data/transfers.csv', dtype={'from_stop_id': str, 'to_stop_id': str})
+trips = pd.read_csv('txt_data/trips.txt')
+stop_times = pd.read_csv('txt_data/stop_times.txt', dtype={'stop_id': str})
+stops = pd.read_csv('txt_data/stops.txt', dtype={'stop_id': str})
+routes = pd.read_csv('txt_data/routes.txt')
+transfers = pd.read_csv('txt_data/transfers.txt', dtype={'from_stop_id': str, 'to_stop_id': str})
 
 # =========================
 # NETWORK EDGES FILE
@@ -77,13 +79,13 @@ def process_network(day_id=1):
     edges = edges.merge(trips[['route_id', 'trip_id']], on='trip_id', how='left')
     edges = edges.merge(routes[['route_id', 'route_name']], on='route_id', how='left')
 
-    # Cleans data outputs edge.csv for sanity check 
+    # Cleans data outputs edge.txt for sanity check 
     cols_to_remove = ['arrival_time', 'departure_time', 'stop_headsign', 'pickup_type', 'drop_off_type', 'timepoint', 'shape_dist_traveled', 'next_arrival_sec', 'next_trip_id', 'route_id']
     edges.drop(columns=cols_to_remove, inplace=True)
     edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration']]
     edges = edges.sort_values(['route_name', 'trip_id', 'stop_sequence'])
-    # edges.to_csv('data/edges.csv', index=False)
-    # routes.to_csv('data/routes.csv', index=False)
+    # edges.to_csv('data/edges.txt', index=False)
+    # routes.to_csv('data/routes.txt', index=False)
 
     # create dictionary with
     # key: ('Stop_A', 'Stop_B', 'Route_Name')
@@ -124,7 +126,7 @@ def process_network(day_id=1):
 def process_transfers():
 
     transfers['min_transfer_time'] //= 2
-    # transfers.to_csv('data/transfers_reduced_time.csv')
+    # transfers.to_csv('data/transfers_reduced_time.txt')
 
     transfer_edges = {}
 
@@ -205,3 +207,56 @@ def str_check():
         transfers = pickle.load(f)
         first_key = list(transfers.keys())[0]
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
+
+# ===================
+# TESTING
+# ===================
+
+def check_pickle(FILENAME):
+    print(f"\n--- INSPECTING: {FILENAME} ---")
+    
+    try:
+        with open(FILENAME, 'rb') as f:
+            data = pickle.load(f)
+            
+        # print general info   
+        data_type = type(data)
+        print(f"Data Type: {data_type}")
+        
+        if hasattr(data, '__len__'):
+            print(f"Total Items: {len(data)}")
+            
+        # print content
+        print("\n--- SAMPLE CONTENT (First 3 Items) ---")
+        
+        if isinstance(data, dict):
+            keys = list(data.keys())[:3]
+            for k in keys:
+                print(f"KEY: {k}")
+                print(f"VAL: {data[k]}")
+                print("-" * 30)
+                
+        elif isinstance(data, list):
+            pprint.pprint(data[:3])
+            
+        elif isinstance(data, pd.DataFrame):
+            print(data.head())
+            
+        else:
+            print(str(data)[:500]) # Print first 500 chars
+    
+    # error handling
+    except FileNotFoundError:
+        print(f"Error: File '{FILENAME}' not found.")
+    except Exception as e:
+        print(f"Error reading pickle: {e}")
+
+if __name__ == "__main__":
+    process_network()
+    process_stops()
+    process_transfers()
+    check_pickle("data/network_edges.pkl")
+    check_pickle("data/transfer_edges.pkl")
+    check_pickle("data/stops.pkl")
+
+

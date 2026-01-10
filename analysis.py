@@ -168,7 +168,7 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
 
     # We must remove all parts of the polygon that are either on top of water, 
     # or inaccessable by walking (e.g. islands)
-    gdf_land = gpd.read_file("data/METRO VANCOUVER LAND POLY.geojson")
+    gdf_land = gpd.read_file("data/metro_vancouver_land_poly.geojson")
     gdf_land = gdf_land.to_crs("EPSG:3005")
 
     gdf_intersection = gpd.overlay(gdf_single, gdf_land, how='intersection')
@@ -291,7 +291,7 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
                 stop_name_v = STOPS_DICT.get(base_v, {}).get('name', base_v)
                 print(f"   -> Ride to {stop_name_v} ({weight:.1f} min)")
                 
-            elif move_type == 'alight':
+            elif move_type == 'deboard':
                 print(f"   -> Get off vehicle.")
 
     # 7. CONSTRUCT GEOMETRY

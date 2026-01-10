@@ -26,8 +26,8 @@ The next steps for me are to iron out some bugs (the program currently draws str
 This project requires updated Translink GTFS Data. 
 
 1. Download latest static GTFS data here: https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-data
-2. Unzip file and bring into a ./txt_data folder
-3. Run txt_to_csv.py
+2. Unzip file and bring data into ./txt_data folder
+3. Run app_simple.py
 
 ### Running Files
 Currently there is no GUI! In this development stage, you can run simple_app.py and follow the terminal commands. To change some parameters like walking speed and maximum allowable walk distance, you can edit them in a code editor.

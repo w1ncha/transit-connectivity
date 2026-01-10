@@ -67,7 +67,7 @@ while True:
         start_lat_str, start_lon_str = coords_input.split(",")
         start_lat, start_lon = float(start_lat_str.strip()), float(start_lon_str.strip())
 
-        if not analysis.check_is_in((start_lon, start_lat), "data/METRO VANCOUVER LAND POLY.geojson"):
+        if not analysis.check_is_in((start_lon, start_lat), "data/metro_vancouver_land_poly.geojson"):
             print("Error: Those coordinates are outside Metro Vancouver or not on land.")
             continue
         else: 
