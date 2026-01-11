@@ -9,7 +9,7 @@ from shapely.geometry import LineString
 from sklearn.neighbors import BallTree
 
 # ===========================
-# HELPER FUNCTION
+# HELPER FUNCTIONS
 # ===========================
 
 def check_is_in(coords, file_path):
@@ -20,6 +20,30 @@ def check_is_in(coords, file_path):
         return True
     else:
         return False
+    
+def get_geometry_for_edge(edge_data):
+
+    if edge_data.get('type') != 'travel': return None
+    
+    sh_id = edge_data.get('shape_id')
+    du = edge_data.get('dist_u')
+    dv = edge_data.get('dist_v')
+    
+    if not sh_id or du is None or dv is None: return None
+    if sh_id not in SHAPES_DB: return None
+    
+    # Lookup
+    shape_entry = SHAPES_DB[sh_id]
+    all_dists = shape_entry['distances']
+    all_coords = shape_entry['coords']
+    
+    # Slice (Binary Search)
+    idx_start = np.searchsorted(all_dists, du, side='right')
+    idx_end = np.searchsorted(all_dists, dv, side='right')
+    
+    # Return Points
+    return all_coords[idx_start:idx_end]
+
 
 # ===========================
 # SETUP & DATA LOADING
@@ -30,6 +54,9 @@ print("Initializing Analysis Engine...")
 try:
     with open('data/stops.pkl', 'rb') as f:
         STOPS_DICT = pickle.load(f)
+    with open('data/shapes.pkl', 'rb') as f:
+        SHAPES_DB = pickle.load(f)
+
         
     stops_df = pd.DataFrame.from_dict(STOPS_DICT, orient='index')
     stops_df.index.name = 'stop_id'
@@ -296,17 +323,33 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
 
     # 7. CONSTRUCT GEOMETRY
     coords = []
+    
     coords.append((start_lon, start_lat))
     
-    for node in node_path:
-        if node in ["USER_START", "USER_END"]: continue
+    for i in range(len(node_path) - 1):
+        u = node_path[i]
+        v = node_path[i+1]
         
-        base_id = str(node).split('_')[0]
+        if u in ["USER_START", "USER_END"]: continue
         
-        if base_id in STOPS_DICT:
-            info = STOPS_DICT[base_id]
-            coords.append((info['lon'], info['lat']))
+        # Check Edge
+        if G.has_edge(u, v):
+            edge_data = G.edges[u, v]
             
+            # Try to get curves
+            curves = get_geometry_for_edge(edge_data)
+            
+            if curves:
+                coords.extend(curves)
+            else:
+                # Straight Line Fallback
+                # (Strip route ID to get stop lat/lon)
+                base_v = str(v).split('_')[0]
+                if base_v in STOPS_DICT:
+                    info = STOPS_DICT[base_v]
+                    coords.append((info['lon'], info['lat']))
+                    
+    # Add End
     coords.append((end_lon, end_lat))
     
     line = LineString(coords)

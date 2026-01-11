@@ -58,14 +58,14 @@ def build_graph(current_time_str, window_mins=60, speed_factor=1.0):
     G = nx.DiGraph()
         
     # ADD NETWORK EDGES
-    for (u, v, route_id), trips in NETWORK_EDGES.items():
+    for (u, v, route_id), edge_data in NETWORK_EDGES.items():
         
+        trips = edge_data['trips']
+
         # Filter Trips
         valid_trips = [t for t in trips if start_window <= t['dept'] <= end_window]
-        
-        if len(valid_trips) == 0:
-            continue
-            
+        if not valid_trips: continue
+
         # Travel Cost (On the bus)
         count = len(valid_trips)
         total_dur = sum(t['dur'] for t in valid_trips)
@@ -96,10 +96,13 @@ def build_graph(current_time_str, window_mins=60, speed_factor=1.0):
         # TRAVEL EDGE (Bus -> Bus)
         # Cost = Travel Time (No Wait!)
         G.add_edge(route_u, 
-                   route_v, 
-                   weight=adjusted_dur_min, 
-                   type='travel', 
-                   route_id=route_id)
+                    route_v, 
+                    weight=adjusted_dur_min, 
+                    type='travel', 
+                    route_id=route_id,
+                    shape_id=edge_data['shape_id'],
+                    dist_u=edge_data['dist_u'],
+                    dist_v=edge_data['dist_v'])
         
         # DEBOARDING EDGE (Bus -> Street)
         # Cost = 0 (Hop off anytime)

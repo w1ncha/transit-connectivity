@@ -1,8 +1,5 @@
 import pandas as pd
-# import glob
-# import os
 import pickle
-from collections import defaultdict
 import pprint
 
 
@@ -21,11 +18,12 @@ for f in data_files:
     data[file_name] = pd.read_csv(f)
 """
 
-trips = pd.read_csv('txt_data/trips.txt')
+trips = pd.read_csv('txt_data/trips.txt', dtype={'shape_id': str})
 stop_times = pd.read_csv('txt_data/stop_times.txt', dtype={'stop_id': str})
 stops = pd.read_csv('txt_data/stops.txt', dtype={'stop_id': str})
 routes = pd.read_csv('txt_data/routes.txt')
 transfers = pd.read_csv('txt_data/transfers.txt', dtype={'from_stop_id': str, 'to_stop_id': str})
+shapes = pd.read_csv('txt_data/shapes.txt', dtype={'shape_id': str})
 
 # =========================
 # NETWORK EDGES FILE
@@ -34,19 +32,6 @@ transfers = pd.read_csv('txt_data/transfers.txt', dtype={'from_stop_id': str, 't
 # Choose service day
 
 def process_network(day_id=1):
-    """
-    day_options = ["weekday", "saturday", "sunday"]
-    day_map = {"weekday": 1, "saturday": 2, "sunday": 3}
-
-    while True:
-        day_input = input("Please enter the day [weekday, saturday, sunday]: ").lower().strip()
-        if day_input in day_options:
-            break
-        print("Invalid choice. Please try again.\n")
-
-    day_id = day_map[day_input]
-    print(f"The day id is {day_id}")
-    """
 
     # Filter trips by day
     active_trips = trips[trips['service_id'] == day_id]
@@ -65,10 +50,13 @@ def process_network(day_id=1):
         
     active_stop_times['arrival_sec'] = active_stop_times['arrival_time'].apply(parse_time)
 
+    active_stop_times['shape_dist_traveled'] = active_stop_times['shape_dist_traveled'].fillna(0)
+
     # Create next stop columns and filter by rows where trip_id doesn't change
     active_stop_times['next_stop_id'] = active_stop_times['stop_id'].shift(-1).fillna(0)
     active_stop_times['next_arrival_sec'] = active_stop_times['arrival_sec'].shift(-1).fillna(0)
     active_stop_times['next_trip_id'] = active_stop_times['trip_id'].shift(-1).fillna(0)
+    active_stop_times['next_shape_dist_traveled'] = active_stop_times['shape_dist_traveled'].shift(-1)
 
     # duration column
     edges = active_stop_times[active_stop_times['trip_id'] == active_stop_times['next_trip_id']].copy()
@@ -76,13 +64,13 @@ def process_network(day_id=1):
 
     # Adds route name columns
     routes['route_name'] = routes['route_short_name'].fillna("Skytrain") + " " + routes['route_long_name']
-    edges = edges.merge(trips[['route_id', 'trip_id']], on='trip_id', how='left')
+    edges = edges.merge(trips[['route_id', 'trip_id', 'shape_id']], on='trip_id', how='left')
     edges = edges.merge(routes[['route_id', 'route_name']], on='route_id', how='left')
 
     # Cleans data outputs edge.txt for sanity check 
-    cols_to_remove = ['arrival_time', 'departure_time', 'stop_headsign', 'pickup_type', 'drop_off_type', 'timepoint', 'shape_dist_traveled', 'next_arrival_sec', 'next_trip_id', 'route_id']
+    cols_to_remove = ['arrival_time', 'departure_time', 'stop_headsign', 'pickup_type', 'drop_off_type', 'timepoint', 'next_arrival_sec', 'next_trip_id', 'route_id']
     edges.drop(columns=cols_to_remove, inplace=True)
-    edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration']]
+    edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration', 'shape_id', 'shape_dist_traveled', 'next_shape_dist_traveled']]
     edges = edges.sort_values(['route_name', 'trip_id', 'stop_sequence'])
     # edges.to_csv('data/edges.txt', index=False)
     # routes.to_csv('data/routes.txt', index=False)
@@ -91,33 +79,41 @@ def process_network(day_id=1):
     # key: ('Stop_A', 'Stop_B', 'Route_Name')
     # value: {'dept': 28800, 'dur': 300}
 
-    network_edges = defaultdict(list)
+    network_edges = {}
 
     iterator = zip(
         edges['stop_id'],
         edges['next_stop_id'],
         edges['route_name'],
         edges['arrival_sec'],
-        edges['duration']
+        edges['duration'],
+        edges['shape_id'],
+        edges['shape_dist_traveled'],
+        edges['next_shape_dist_traveled']
     )
 
-    for u, v, route, time, dur in iterator:
+    for u, v, route, time, dur, shape, dist_u, dist_v in iterator:
+
         key = (u, v, route)
-        trip_data = {
+
+        if key not in network_edges:
+                    network_edges[key] = {
+                        'shape_id': shape,
+                        'dist_u': float(dist_u) if pd.notna(dist_u) else None,
+                        'dist_v': float(dist_v) if pd.notna(dist_v) else None,
+                        'trips': [] 
+                    }
+        
+        network_edges[key]['trips'].append({
             'dept': int(time),
             'dur': int(dur)
-        }
-        
-        network_edges[key].append(trip_data)
+        })
 
-    print(f"Network dictionary complete. Created {len(network_edges)} unique route segments.")
+    print(f"Network dictionary complete. Created {len(network_edges)} unique route segments. Saving...")
 
     # save to pickle file
-    print("Saving to file...")
     with open('data/network_edges.pkl', 'wb') as f:
         pickle.dump(dict(network_edges), f)
-
-    print("Done! 'network_edges.pkl' is ready.")
 
 # ============================
 #  TRANSFER EDGES FILE
@@ -147,13 +143,10 @@ def process_transfers():
         else:
             transfer_edges[key] = time
 
-    print(f"Transfer dictionary complete. Created {len(transfer_edges)} unique transfer segments.")
+    print(f"Transfer dictionary complete. Created {len(transfer_edges)} unique transfer segments. Saving...")
 
-    print("Saving to file...")
     with open('data/transfer_edges.pkl', 'wb') as f:
         pickle.dump(transfer_edges, f)
-
-    print("Done! 'transfer_edges.pkl' is ready.")
 
 # ====================
 # STOPS FILE
@@ -179,13 +172,10 @@ def process_stops():
 
         stops_dict[key] = value
 
-    print(f"Stops dictionary complete. Created {len(stops_dict)} stops.")
+    print(f"Stops dictionary complete. Created {len(stops_dict)} stops. Saving...")
 
-    print("Saving to file...")
     with open('data/stops.pkl', 'wb') as f:
         pickle.dump(stops_dict, f)
-
-    print("Done! 'stops.pkl' is ready.")
 
 def str_check():
     process_network(day_id = 1)
@@ -207,6 +197,35 @@ def str_check():
         transfers = pickle.load(f)
         first_key = list(transfers.keys())[0]
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
+
+# ======================
+# SHAPES FILE
+# ======================
+
+def process_shapes():
+
+    global shapes    
+    shapes['shape_dist_traveled'] = pd.to_numeric(shapes['shape_dist_traveled'], errors='coerce')
+    shapes = shapes.sort_values(['shape_id', 'shape_dist_traveled'])
+    
+    shape_db = {}
+    
+    for sh_id, group in shapes.groupby('shape_id'):
+        
+        dists = group['shape_dist_traveled'].values
+        lats = group['shape_pt_lat'].values
+        lons = group['shape_pt_lon'].values
+        coords = list(zip(lons, lats))
+        
+        shape_db[str(sh_id)] = {
+            'distances': dists, 
+            'coords': coords
+        }
+        
+    print(f"Shape DB built with ({len(shape_db)} shapes). Saving...")
+    with open('data/shapes.pkl', 'wb') as f:
+        pickle.dump(shape_db, f)
+
 
 # ===================
 # TESTING
@@ -255,8 +274,10 @@ if __name__ == "__main__":
     process_network()
     process_stops()
     process_transfers()
+    process_shapes()
     check_pickle("data/network_edges.pkl")
     check_pickle("data/transfer_edges.pkl")
     check_pickle("data/stops.pkl")
+    check_pickle("data/shapes.pkl")
 
 

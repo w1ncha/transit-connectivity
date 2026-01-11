@@ -12,7 +12,7 @@ This project will be an interactive dashboard that lets users visualize the resi
 Users will then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a snowstorm by slowing down buses, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch as the travel bubble shrinks. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
 ### Current Project Status
-This project is currently in progress. I have completed the preliminary backend, means that you can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. 
+This project is currently in progress. I have a working  backend, meaning most of  the functionality is there. You can generate 'travel bubbles' using this program. You are able to visualize them by importing the generated .geojson file into a GIS application such as ArcGIS or QGIS. 
 
 <img src="git_data/isochrone.png" width="400">
 
@@ -20,7 +20,13 @@ After creating these bubbles, you can input a second coordinate into the program
 
 <img src="git_data/terminal_output.png" width="400">
 
-The next steps for me are to iron out some bugs (the program currently draws straight lines between bus stops, making express routes look strange when visualized). Then, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
+#### Next Steps
+Next, I will work on learning Shiny for Python to create a front end so that the user does not need to use a GIS application. Finally, I will work on some advanced features, including toggling bus/skytrain, changing service frequency, changing walking speeds, disabling infrastructure and more!
+
+#### Problems Solved
+**Water:** The program initially assumed you could walk straight over water, since the travel bubbles spread from each reachable bus stop with a circle of radius: (walking speed * leftover time budget). To fix this, I combined data from government OpenData sites to create a .geojson file, a polygon of all land within Metro Vancouver. Performing an intersection with this file and the resulting file from my program deletes all of the travel bubble that is over water. However, there was still travel buubble over top of unreachable islands. To fix this without incorporating another graph layer of the street network, I used a spatial join to remove all polygons not containing a disembark point.
+
+**Routing:** The program initially drew straight lines between bus stops. This is usually fine, but for some express routes, the straight line between stops is obviously wrong. To fix this, I took advantage of the distance_traveled column of the stop data. For every individual transit trip, the program uses a splicing function to grab the points in "shapes.txt" with distance_traveled values between the board and disembark stops. This results in extremely accurate routing.
 
 ### Downloading GTFS Data
 This project requires updated Translink GTFS Data. 
