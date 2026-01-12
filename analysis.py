@@ -142,7 +142,6 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
         
     
     # 4. CREATE ISOCHRONE
-    
     best_times = {}
 
     for node, time_taken in reachable_nodes.items():

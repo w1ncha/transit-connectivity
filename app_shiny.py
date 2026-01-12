@@ -20,10 +20,11 @@ app_ui = ui.page_sidebar(
     ui.sidebar(
         ui.h4("Settings", style="margin-top: 0; font-weight: bold;"),
         ui.input_select("day", "Select Day", choices=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]),
-        ui.div(
-            ui.tags.label("Select Start Time:", {"for": "start_time"}),
-            ui.tags.input(id="start_time", type="time", value="09:00", class_="form-control"),
-            class_="form-group shiny-input-container"
+        ui.input_text(
+            "start_time", 
+            "Select Start Time:", 
+            value="17:00", 
+            placeholder="HH:MM"
         ),
         ui.input_slider("budget", "Time Budget", 5, 60, 30),
         ui.input_slider("frequency", "Frequency Modifier", 0.1, 3.0, 1, step=0.1),
@@ -120,7 +121,7 @@ def server(input, output, session):
             with open('data/network_edges.pkl', 'rb') as f:
                 return pickle.load(f)
         return None
-
+        
     # --- 4. GRAPH BUILDER STAGE ---
     @reactive.Calc
     def current_graph():
@@ -130,13 +131,15 @@ def server(input, output, session):
         # Ensure network data is loaded
         network_edges = get_network_data()
         req(network_edges)
-        
+
         # Isolate other inputs so they only apply on Submit
         with reactive.isolate():
             time_str = input.start_time()
             freq_mod = input.frequency()
             # active_toggles = input.toggles() 
-        
+        print("*")
+        print(time_str)
+        print(type(time_str))
         print(f"Building Graph: {time_str} | Freq: {freq_mod}")
         
         return graph_builder.build_graph(
@@ -183,30 +186,34 @@ def server(input, output, session):
             print(f"Error in isochrone calc: {e}")
             return None
 
+
     # --- 6. MAP UPDATE ---
     @reactive.Effect
     def update_map():
-        # Get data
         gdf = isochrone_gdf()
         
-        # Remove old isochrone layers safely
-        # We iterate over a tuple copy to avoid modification errors
-        for layer in tuple(map_obj.layers):
-            # Check if layer has a name attribute and if it matches
-            if hasattr(layer, 'name') and layer.name == 'isochrone':
-                map_obj.remove_layer(layer)
-        
-        if gdf is not None and not gdf.empty:
-            print("Drawing new Isochrone...")
-            
+        # Fix the 'Ambiguous Truth Value' error
+        # This specifically checks existence and content safely
+        req(gdf is not None)
+        if gdf.empty:
+            return
+
+        # Nuclear reset logic (tested earlier)
+        try:
             geo_data = json.loads(gdf.to_json())
-            
             new_layer = L.GeoJSON(
                 data=geo_data, 
-                style={'color': '#2b8cbe', 'fillColor': '#2b8cbe', 'fillOpacity': 0.4},
-                name='isochrone' 
+                name='isochrone',
+                style={'color': '#2b8cbe', 'fillOpacity': 0.4}
             )
             
-            map_obj.add_layer(new_layer)
+            # Keep basemap, add isochrone, add marker
+            map_obj.layers = (map_obj.layers[0], new_layer, user_marker)
+            print("✅ Map updated on stable Python version")
+        except Exception as e:
+            print(f"Error: {e}")
+
+        # DEBUG
+        print(f"GDF Bounds: {gdf.total_bounds}")
 
 app = App(app_ui, server)
