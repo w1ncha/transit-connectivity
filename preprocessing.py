@@ -115,6 +115,8 @@ def process_network(day_id=1):
     with open('data/network_edges.pkl', 'wb') as f:
         pickle.dump(dict(network_edges), f)
 
+    return 'data/network_edges.pkl'
+
 # ============================
 #  TRANSFER EDGES FILE
 # ============================
@@ -148,6 +150,8 @@ def process_transfers():
     with open('data/transfer_edges.pkl', 'wb') as f:
         pickle.dump(transfer_edges, f)
 
+    return 'data/transfer_edges.pkl'
+
 # ====================
 # STOPS FILE
 # ====================
@@ -177,26 +181,8 @@ def process_stops():
     with open('data/stops.pkl', 'wb') as f:
         pickle.dump(stops_dict, f)
 
-def str_check():
-    process_network(day_id = 1)
-    process_transfers()
-    process_stops()
+    return 'data/stops.pkl'
 
-    print("Checking Data Types...")
-
-    # Check Network Edges
-    with open('data/network_edges.pkl', 'rb') as f:
-        edges = pickle.load(f)
-        first_key = list(edges.keys())[0]
-        # Key structure: (u, v, route)
-        print(f"Network Nodes: {type(first_key[0])} (Should be str)")
-        print(f"Network Route: {type(first_key[2])} (Should be str)")
-
-    # Check Transfers
-    with open('data/transfer_edges.pkl', 'rb') as f:
-        transfers = pickle.load(f)
-        first_key = list(transfers.keys())[0]
-        print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
 
 # ======================
 # SHAPES FILE
@@ -225,6 +211,8 @@ def process_shapes():
     print(f"Shape DB built with ({len(shape_db)} shapes). Saving...")
     with open('data/shapes.pkl', 'wb') as f:
         pickle.dump(shape_db, f)
+    
+    return 'data/shapes.pkl'
 
 
 # ===================
@@ -270,8 +258,29 @@ def check_pickle(FILENAME):
     except Exception as e:
         print(f"Error reading pickle: {e}")
 
+def str_check():
+    process_network(day_id = 1)
+    process_transfers()
+    process_stops()
+
+    print("Checking Data Types...")
+
+    # Check Network Edges
+    with open('data/network_edges.pkl', 'rb') as f:
+        edges = pickle.load(f)
+        first_key = list(edges.keys())[0]
+        # Key structure: (u, v, route)
+        print(f"Network Nodes: {type(first_key[0])} (Should be str)")
+        print(f"Network Route: {type(first_key[2])} (Should be str)")
+
+    # Check Transfers
+    with open('data/transfer_edges.pkl', 'rb') as f:
+        transfers = pickle.load(f)
+        first_key = list(transfers.keys())[0]
+        print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
+
 if __name__ == "__main__":
-    process_network()
+    # process_network()
     process_stops()
     process_transfers()
     process_shapes()
@@ -279,5 +288,3 @@ if __name__ == "__main__":
     check_pickle("data/transfer_edges.pkl")
     check_pickle("data/stops.pkl")
     check_pickle("data/shapes.pkl")
-
-

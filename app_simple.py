@@ -1,9 +1,9 @@
 import re
 import sys
 import os
-import geopandas as gpd
 import analysis
 import preprocessing
+import graph_builder
 # only run on acquiring new GTFS Data
 # import txt_to_csv
 
@@ -43,11 +43,9 @@ while True:
         print("Invalid format or time. Please use HH:MM (e.g., 14:30).")
         continue
 
-    import graph_builder
     current_graph = graph_builder.build_graph(
         current_time_str=time_input, 
         window_mins=60,
-        speed_factor=1.0  
     )
     break # Move to the next loop
 

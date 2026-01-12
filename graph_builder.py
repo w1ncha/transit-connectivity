@@ -43,7 +43,7 @@ def parse_time(time_str):
 # GRAPH BUILDER
 # =================
 
-def build_graph(current_time_str, window_mins=60, speed_factor=1.0):
+def build_graph(current_time_str, window_mins=60, active_toggles=None, frequency_modifier=1.0):
     
     # convert time to seconds
     center_sec = parse_time(current_time_str)
@@ -70,10 +70,10 @@ def build_graph(current_time_str, window_mins=60, speed_factor=1.0):
         count = len(valid_trips)
         total_dur = sum(t['dur'] for t in valid_trips)
         avg_dur_sec = total_dur / count
-        adjusted_dur_min = (avg_dur_sec / speed_factor) / 60.0
+        avg_dur_min = avg_dur_sec / 60.0
         
         # Wait Cost (On the street)
-        headway_sec = window_seconds / count
+        headway_sec = window_seconds / count / frequency_modifier
         wait_time_min = (headway_sec / 2) / 60.0
         
         # Street Nodes (Physical location)
@@ -97,7 +97,7 @@ def build_graph(current_time_str, window_mins=60, speed_factor=1.0):
         # Cost = Travel Time (No Wait!)
         G.add_edge(route_u, 
                     route_v, 
-                    weight=adjusted_dur_min, 
+                    weight=avg_dur_min, 
                     type='travel', 
                     route_id=route_id,
                     shape_id=edge_data['shape_id'],

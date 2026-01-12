@@ -78,7 +78,7 @@ except Exception as e:
 
 # ISOCHRONE FUNCTION
 
-def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1.0, max_walk_km=1.0):
+def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1.2, max_walk_km=1.0):
     """
     Calculates the reachable area (Isochrone) from a specific point.
     """
@@ -165,7 +165,8 @@ def get_isochrone(G, start_lat, start_lon, time_budget_mins=30, walk_speed_mps=1
         remaining_time = time_budget_mins - time_taken
         
         # Calculate Radius (Time * Speed)
-        radius_meters = remaining_time * walk_speed_mpm
+        walk_dist = remaining_time * walk_speed_mpm
+        radius_meters = min(walk_dist, max_walk_km*1000)
         
         # We only draw if the circle is meaningful (> 10 meters)
         if radius_meters > 10:
