@@ -9,10 +9,6 @@ import sys
 print("Loading network data...")
 
 try:
-    # Network Edges: {(u, v, route_id): [{'dept': sec, 'dur': sec}, ...]}
-    with open('data/network_edges.pkl', 'rb') as f:
-        NETWORK_EDGES = pickle.load(f)
-
     # Transfer Edges: {(u, v, 'transfer'): seconds}
     with open('data/transfer_edges.pkl', 'rb') as f:
         TRANSFER_EDGES = pickle.load(f)
@@ -43,8 +39,8 @@ def parse_time(time_str):
 # GRAPH BUILDER
 # =================
 
-def build_graph(current_time_str, window_mins=60, active_toggles=None, frequency_modifier=1.0):
-    
+def build_graph(network_edges, current_time_str, window_mins=60, active_toggles=None, frequency_modifier=1.0):
+
     # convert time to seconds
     center_sec = parse_time(current_time_str)
     if center_sec is None:
@@ -58,7 +54,7 @@ def build_graph(current_time_str, window_mins=60, active_toggles=None, frequency
     G = nx.DiGraph()
         
     # ADD NETWORK EDGES
-    for (u, v, route_id), edge_data in NETWORK_EDGES.items():
+    for (u, v, route_id), edge_data in network_edges.items():
         
         trips = edge_data['trips']
 

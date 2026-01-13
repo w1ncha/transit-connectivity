@@ -33,9 +33,14 @@ shapes = pd.read_csv('txt_data/shapes.txt', dtype={'shape_id': str})
 
 def process_network(day_id=1):
 
+    target_service_id = str(day_id)
+    trips['service_id'] = trips['service_id'].astype(str)
+
     # Filter trips by day
-    active_trips = trips[trips['service_id'] == day_id]
+    active_trips = trips[trips['service_id'] == target_service_id]
     active_stop_times = stop_times[stop_times['trip_id'].isin(active_trips['trip_id'])]
+
+    print(f"DEBUG: Processing Day {target_service_id}. Found {len(active_trips)} trips.")
 
     # Sort values in trip order
     active_stop_times = active_stop_times.sort_values(['trip_id', 'stop_sequence'])

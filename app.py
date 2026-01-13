@@ -169,8 +169,8 @@ def server(input, output, session):
         """
         Builds the graph using the loaded network data and current settings.
         """
-        network_edges = get_network_data()
-        req(network_edges)
+        network_data = get_network_data()
+        req(network_data)
 
         with reactive.isolate():
             time_str = input.start_time()
@@ -184,6 +184,7 @@ def server(input, output, session):
         print(f"Building Graph: {time_str} | Freq: {freq_mod}")
         
         return graph_builder.build_graph(
+            network_edges = network_data,
             current_time_str=time_str,
             window_mins=60,
             frequency_modifier=freq_mod
