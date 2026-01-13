@@ -11,6 +11,10 @@ This project is an interactive dashboard that lets users visualize the resilienc
 
 Users are then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a transit funding cuts by cutting frequency in half, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch the travel bubble shrink. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
+### Dashboard Link
+You can find the link to the dashboard here:
+https://bradleycarver.shinyapps.io/metro-van-transit-connectivity/
+
 ### Current Project Status
 The Shiny for Python dashboard is currently functional, though it is missing some functionality. You can check it out by running app.py.
 
@@ -26,20 +30,18 @@ After creating these bubbles, you can input a second coordinate into the program
 
 #### Next Steps
 There are a number of bugs to fix and features to implement:
-- There is an issue with the weekday selector. While it correctly creates a graph with the appropriate bus timings, the analysis program is not using the updated graph.
 - Must implement infrastructure toggles.
 - Must implement routing engine to dashboard.
-- Find a way to allow this app to be run by anyone on the internet. I tried using shinyapps.io but the RAM usage is too high. I will likely have to implement caching to optimize runtime.
 
 #### Problems Solved
 **Water:** The program initially assumed you could walk straight over water, since the travel bubbles spread from each reachable bus stop with a circle of radius: (walking speed * leftover time budget). To fix this, I combined data from government OpenData sites to create a .geojson file, a polygon of all land within Metro Vancouver. Performing an intersection with this file and the resulting file from my program deletes all of the travel bubble that is over water. However, there was still travel buubble over top of unreachable islands. To fix this without incorporating another graph layer of the street network, I used a spatial join to remove all polygons not containing a disembark point.
 
 **Routing:** The program initially drew straight lines between bus stops. This is usually fine, but for some express routes, the straight line between stops is obviously wrong. To fix this, I took advantage of the distance_traveled column of the stop data. For every individual transit trip, the program uses a splicing function to grab the points in "shapes.txt" with distance_traveled values between the board and disembark stops. This results in extremely accurate routing.
 
-**Graphical User Interface:** There have been many difficulties create a dashboard with Shiny for Python! This is my first time creating any front end or dashboard, so it's been a steep learning curve. One key issue I am yet to solve is implementing the routing functionality of the program to the dashboard. That is, allowing the user to click a second point in the map within the isochrone and have the app recognize this and draw the path to this location.
+**Graphical User Interface:** There have been many difficulties create a dashboard with Shiny for Python! This is my first time creating any front end or dashboard, so it's been a steep learning curve. In order to upload the dashboard to the internet, I used shinyapps.io. I also had to create an alternate version of the program with pre-run data analysis, since Shinyapps has a RAM limit I kept running into. One key issue I am yet to solve is implementing the routing functionality of the program to the dashboard. That is, allowing the user to click a second point in the map within the isochrone and have the app recognize this and draw the path to this location.
 
 ### Running this program.
-
+If you would like to run this dashboard locally:
 1. Install python (this program was developed on version 3.12)
 2. Download latest static GTFS data here: https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-data
 3. Unzip file and bring data into ./txt_data folder
