@@ -72,11 +72,11 @@ def process_network(day_id=1):
     edges.drop(columns=cols_to_remove, inplace=True)
     edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration', 'shape_id', 'shape_dist_traveled', 'next_shape_dist_traveled']]
     edges = edges.sort_values(['route_name', 'trip_id', 'stop_sequence'])
-    # edges.to_csv('data/edges.txt', index=False)
+    edges.to_csv('data/edges.csv', index=False)
     # routes.to_csv('data/routes.txt', index=False)
 
     # create dictionary with
-    # key: ('Stop_A', 'Stop_B', 'Route_Name')
+    # key: ('Stop_A', 'Stop_B', 'Route_Name')x
     # value: {'dept': 28800, 'dur': 300}
 
     network_edges = {}
@@ -280,7 +280,7 @@ def str_check():
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
 
 if __name__ == "__main__":
-    # process_network()
+    #  process_network()
     process_stops()
     process_transfers()
     process_shapes()
