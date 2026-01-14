@@ -11,6 +11,8 @@ This project is an interactive dashboard that lets users visualize the resilienc
 
 Users are then able to modify city conditions by interacting with on-screen options. For example, they can simulate a transit funding cuts by cutting frequency in half, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch the travel bubble shrink. Finally, the tool includes accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
+This program was developed exclusively with Translink GTFS (transit schedule) data. This means there is no API usage or borrowing processing from other sources. Just pure data manipulation and network analysis and geospatial operations! 
+
 ### Dashboard Link
 You can find the online dashboard here:
 https://bradleycarver.shinyapps.io/metro-van-transit-connectivity/
