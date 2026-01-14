@@ -9,14 +9,14 @@ What if you could customize these to show how far you can get in any amount of t
 
 This project is an interactive dashboard that lets users visualize the resiliency of the Metro Vancouver transit network. By selecting a specific location and time of day, the dashboard will generate a 'travel bubble' on the map, showing exactly how far a person can get within a set time limit using transit (busses, Skytrain, etc.).
 
-Users are then be able to modify city conditions by interacting with on-screen options. For example, they can simulate a transit funding cuts by cutting frequency in half, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch the travel bubble shrink. Finally, the tool will include accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
+Users are then able to modify city conditions by interacting with on-screen options. For example, they can simulate a transit funding cuts by cutting frequency in half, or simulate a major infrastructure failure by virtually closing the Lions Gate Bridge, and watch the travel bubble shrink. Finally, the tool includes accessibility features, allowing users to adjust walking speeds to see how these disruptions disproportionately affect seniors or those with limited mobility compared to the average commuter.
 
 ### Dashboard Link
-You can find the link to the dashboard here:
+You can find the online dashboard here:
 https://bradleycarver.shinyapps.io/metro-van-transit-connectivity/
 
 ### Current Project Status
-The Shiny for Python dashboard is currently functional, though it is missing some functionality. You can check it out by running app.py.
+The Shiny for Python dashboard is currently working, though it is missing some functionality. You can check it out by running app.py.
 
 <img src="git_data/dashboard.png" width="600">
 
