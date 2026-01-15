@@ -18,7 +18,7 @@ You can find the online dashboard here:
 https://bradleycarver.shinyapps.io/metro-van-transit-connectivity/
 
 ### Current Project Status
-The Shiny for Python dashboard is currently working, though it is missing some functionality. You can check it out by running app.py.
+The Shiny for Python dashboard is working. You can check it out by running app.py.
 
 <img src="git_data/dashboard.png" width="600">
 
@@ -33,7 +33,7 @@ After creating these bubbles, you can input a second coordinate into the program
 #### Next Steps
 There are a number of bugs to fix and features to implement:
 - Must implement infrastructure toggles.
-- Must implement routing engine to dashboard.
+- Implement cacheing system to reduce memory usage.
 
 #### Problems Solved
 **Water:** The program initially assumed you could walk straight over water, since the travel bubbles spread from each reachable bus stop with a circle of radius: (walking speed * leftover time budget). To fix this, I combined data from government OpenData sites to create a .geojson file, a polygon of all land within Metro Vancouver. Performing an intersection with this file and the resulting file from my program deletes all of the travel bubble that is over water. However, there was still travel buubble over top of unreachable islands. To fix this without incorporating another graph layer of the street network, I used a spatial join to remove all polygons not containing a disembark point.
