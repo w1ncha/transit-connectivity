@@ -39,8 +39,8 @@ app_ui = ui.page_sidebar(
 
         ui.div(
             ui.input_checkbox_group("toggles", "Infrastructure Toggles", 
-                                    {"bus": "Bus Routes", "skytrain": "SkyTrain", "bridges": "Bridges"}, 
-                                    selected=["bus", "skytrain", "bridges"]),
+                                    {"skytrain": "SkyTrain", "bridges": "Bridges"}, 
+                                    selected=["skytrain", "bridges"]),
             style="margin-bottom: -10px;" 
         ),
         

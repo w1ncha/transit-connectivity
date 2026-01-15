@@ -48,7 +48,7 @@ If you would like to run this dashboard locally:
 2. Download latest static GTFS data here: https://www.translink.ca/about-us/doing-business-with-translink/app-developer-resources/gtfs/gtfs-data
 3. Unzip file and bring data into ./txt_data folder
 4. Run preprocessing.py once.
-5. Run app.py for the dashboard, or app_simple.py for the terminal UI.
+5. Run app.py for the dashboard (will take a while to start the first time), or app_simple.py for the terminal UI.
 
 ### Sources
 This project uses open data files from various governments:
