@@ -3,7 +3,6 @@ from shinywidgets import output_widget, render_widget
 from ipywidgets import Layout
 from ipyleaflet import AwesomeIcon
 from shapely.geometry import Point, shape
-import ipywidgets as widgets
 import ipyleaflet as L
 import geopandas as gpd
 import json
@@ -42,7 +41,7 @@ app_ui = ui.page_sidebar(
             ui.input_checkbox_group("toggles", "Infrastructure Toggles", 
                                     {"bus": "Bus Routes", "skytrain": "SkyTrain", "bridges": "Bridges"}, 
                                     selected=["bus", "skytrain", "bridges"]),
-            style="margin-bottom: -10px;" # Pulls the boundary up
+            style="margin-bottom: -10px;" 
         ),
         
         ui.hr(style="margin-top: 5px; margin-bottom: 10px;"), 
@@ -78,7 +77,7 @@ app_ui = ui.page_sidebar(
                 opacity: 1;
                 pointer-events: auto; 
             }
-                      
+            
             .leaflet-container,
             .leaflet-interactive {
             cursor: crosshair !important;
@@ -91,23 +90,26 @@ app_ui = ui.page_sidebar(
         """)
     ),
 
-
     ui.div("Calculating...", id="custom-loading-overlay"),
     
     ui.card(
         ui.card_header(
             ui.span(
-                "Metro Vancouver Transit Pulse – Connectivity & Routing", 
+                "Metro Vancouver Transit Pulse – Transit Connectivity Simulator", 
                 style="font-size: 24px; font-weight: bold;"
             ),
             class_="py-3" 
         ),
+        
+        # 1. THE MAP
         output_widget("map_display", width="100%", height="100%"), 
-        style="padding: 0; height: 90vh"
-    ),
+        
+        # 2. THE FLOATING ITINERARY PANEL (Overlay)
+        # We use a standard absolute div to ensure it doesn't block the map
+        ui.output_ui("itinerary_panel"),
 
-    ui.output_ui("route_instructions_panel"),
-        style="padding: 0; height: 90vh; position: relative;"
+        style="padding: 0; height: 90vh; position: relative;" # relative needed for absolute child
+    )
 )
 
 
@@ -118,9 +120,11 @@ app_ui = ui.page_sidebar(
 def server(input, output, session):
     
     # Reactive Values
-    origin_coords = reactive.Value(None)      # (Lat, Lon)
-    destination_coords = reactive.Value(None) # (Lat, Lon)
-    current_iso_geom = reactive.Value(None)   # Shapely Polygon/MultiPolygon
+    origin_coords = reactive.Value(None)      
+    destination_coords = reactive.Value(None) 
+    current_iso_geom = reactive.Value(None)
+    # Store route steps here
+    current_steps = reactive.Value(None)
     cache_state = {"last_day": None}
 
     # Initialize Map
@@ -128,21 +132,12 @@ def server(input, output, session):
     map_obj.add_layer(L.basemaps.CartoDB.Positron)
     
     # Markers
-    red_icon = AwesomeIcon(
-    name='flag', 
-    marker_color='red', 
-    icon_color='white'
-    )
-    blue_icon = AwesomeIcon(
-    name='circle', 
-    marker_color='red', 
-    icon_color='white'
-    )
+    red_icon = AwesomeIcon(name='flag', marker_color='red', icon_color='white')
+    blue_icon = AwesomeIcon(name='circle', marker_color='blue', icon_color='white')
 
-    user_marker = L.Marker(location=(0,0), draggable=False, visible=False, icone=blue_icon, title="Origin")
+    user_marker = L.Marker(location=(0,0), draggable=False, visible=False, icon=blue_icon, title="Origin")
     dest_marker = L.Marker(location=(0,0), draggable=False, visible=False, icon=red_icon, title="Destination")
     
-    # Add markers to map
     map_obj.add_layer(user_marker)
     map_obj.add_layer(dest_marker)
 
@@ -169,12 +164,13 @@ def server(input, output, session):
                 # Update UI Markers
                 user_marker.location = coords
                 user_marker.visible = True
-                dest_marker.visible = False # Hide old destination
+                dest_marker.visible = False 
                 
                 # Update State
                 origin_coords.set(coords)
-                destination_coords.set(None) # Reset destination
-                current_iso_geom.set(None)   # Clear old poly logic until new one is ready
+                destination_coords.set(None)
+                current_iso_geom.set(None)
+                current_steps.set(None) # Clear steps
             
     map_obj.on_interaction(handle_click)
 
@@ -189,16 +185,13 @@ def server(input, output, session):
     @reactive.event(input.clear_map)
     def clear_all():
         print("🗑️ Clearing Map")
-        # Reset Logic
         origin_coords.set(None)
         destination_coords.set(None)
         current_iso_geom.set(None)
+        current_steps.set(None)
         
-        # Reset UI
         user_marker.visible = False
         dest_marker.visible = False
-        
-        layers_to_keep = [layer for layer in map_obj.layers if isinstance(layer, (L.TileLayer, L.Marker))]
         
         for layer in map_obj.layers:
             if getattr(layer, 'name', '') in ['isochrone', 'route_path']:
@@ -209,7 +202,7 @@ def server(input, output, session):
     # ---------------------------------------------------------
     @reactive.Calc
     def get_network_data():
-        input.submit() # Trigger on submit button
+        input.submit() 
         with reactive.isolate():
             selected_day = input.day()
 
@@ -245,7 +238,7 @@ def server(input, output, session):
         )
 
     # ---------------------------------------------------------
-    # ISOCHRONE CALCULATION (ORIGIN)
+    # ISOCHRONE CALCULATION
     # ---------------------------------------------------------
     @reactive.Calc
     def isochrone_data():
@@ -259,7 +252,6 @@ def server(input, output, session):
             max_walk = input.max_walk()
 
         if not LAND_GDF.contains(Point(coords[1], coords[0])).any():
-            print("Outside land boundary.")
             return None
         
         print("Calculating Isochrone...")
@@ -274,13 +266,10 @@ def server(input, output, session):
         return gdf
 
     # ---------------------------------------------------------
-    # ROUTE CALCULATION (DESTINATION)
+    # ROUTE CALCULATION
     # ---------------------------------------------------------
     @reactive.Calc
     def route_data():
-        """
-        Calculates path when destination_coords changes.
-        """
         orig = origin_coords.get()
         dest = destination_coords.get()
         req(orig, dest)
@@ -290,39 +279,97 @@ def server(input, output, session):
             speed = input.walk_speed()
             walk = input.max_walk()
             req(G)
-        
-        with reactive.isolate():
-             speed = input.walk_speed()
-             walk = input.max_walk()
 
         print(f"Calculating Route from {orig} to {dest}")
         
         try:
-            gdf, steps = analysis.get_route(
+            # SAFETY CHECK: Handle if analysis.get_route returns 1 or 2 values
+            result = analysis.get_route(
                 G=G,
-                start_lat=orig[0],
-                start_lon=orig[1],
-                end_lat=dest[0],
-                end_lon=dest[1],
-                walk_speed_mps=speed,
-                max_walk_km=walk
+                start_lat=orig[0], start_lon=orig[1],
+                end_lat=dest[0], end_lon=dest[1],
+                walk_speed_mps=speed, max_walk_km=walk
             )
-            return gdf, steps
-        except AttributeError:
-            print("Error: not found.")
-            return None
+            
+            # If function returns tuple (gdf, steps)
+            if isinstance(result, tuple) and len(result) == 2:
+                return result[0], result[1]
+            
+            # If function returns just gdf (fallback)
+            return result, ["Route calculated (Update analysis.py for steps)"]
+
         except Exception as e:
             print(f"Routing Error: {e}")
-            return None
+            return None, None
 
     # ---------------------------------------------------------
-    # MAP UPDATER: ISOCHRONE
+    # UI: ITINERARY PANEL (Rendered via CSS Overlay)
+    # ---------------------------------------------------------
+    @render.ui
+    def itinerary_panel():
+        # Get steps from the reactive variable updated in draw_route
+        steps = current_steps.get()
+        
+        if not steps:
+            return None
+        
+        # Build list items
+        list_items = ""
+        for i, step in enumerate(steps):
+            color = "#555"
+            fw = "normal"
+            list_items += f'<li style="margin-bottom: 6px; color: {color}; font-weight: {fw};">{step}</li>'
+
+        # Return a CSS-Positioned DIV (Not ipywidgets)
+        # This will float over the map. Z-Index 1000 ensures it is above the map.
+        return ui.HTML(f"""
+            <div style="
+                position: absolute;
+                top: 10px;
+                right: 10px;
+                width: 320px;
+                z-index: 1000;
+                background-color: rgba(255, 255, 255, 0.95);
+                backdrop-filter: blur(5px);
+                border-radius: 12px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+                border: 1px solid rgba(255,255,255,0.3);
+                font-family: -apple-system, sans-serif;
+                font-size: 13px;
+            ">
+                <details open>
+                    <summary style="
+                        padding: 12px 15px;
+                        font-weight: bold;
+                        font-size: 14px;
+                        cursor: pointer;
+                        border-bottom: 1px solid #eee;
+                        outline: none;
+                        user-select: none;
+                    ">Trip Itinerary</summary>
+                    <ul style="
+                        padding: 10px 15px 15px 30px; 
+                        margin: 0; 
+                        line-height: 1.4; 
+                        max-height: 60vh; 
+                        overflow-y: auto;
+                    ">
+                        {list_items}
+                    </ul>
+                </details>
+            </div>
+        """)
+
+    # ---------------------------------------------------------
+    # DRAW EFFECTS
     # ---------------------------------------------------------
     @reactive.Effect
     def draw_isochrone():
         gdf = isochrone_data()
         
-        # Clear existing isochrone
+        # Clear existing
+        current_steps.set(None) # Hides the panel
+        
         for layer in map_obj.layers:
             if layer.name in ['isochrone', 'route_path']:
                 map_obj.remove_layer(layer)
@@ -331,10 +378,8 @@ def server(input, output, session):
             current_iso_geom.set(None)
             return
 
-        # Store geometry for click detection (store the union of polygons if multiple)
         current_iso_geom.set(gdf.geometry.union_all())
 
-        # Draw to map
         geo_data = json.loads(gdf.to_json())
         new_layer = L.GeoJSON(
             data=geo_data, 
@@ -342,20 +387,19 @@ def server(input, output, session):
             style={'color': '#2b8cbe', 'fillOpacity': 0.4, 'weight': 2}
         )
         
-        # Ensure marker stays on top
         map_obj.add_layer(new_layer)
         if user_marker in map_obj.layers:
             map_obj.remove_layer(user_marker)
             map_obj.add_layer(user_marker)
-
+        
         dest_marker.visible = False
 
-    # ---------------------------------------------------------
-    # MAP UPDATER: ROUTE
-    # ---------------------------------------------------------
     @reactive.Effect
     def draw_route():
-        route_gdf, _ = route_data()
+        route_gdf, steps = route_data()
+
+        # Update Steps State (Triggers Panel Render)
+        current_steps.set(steps)
 
         # Clear existing route
         for layer in map_obj.layers:
@@ -365,7 +409,6 @@ def server(input, output, session):
         if route_gdf is None or route_gdf.empty:
             return
 
-        # Draw to map
         geo_data = json.loads(route_gdf.to_json())
         route_layer = L.GeoJSON(
             data=geo_data,
@@ -375,10 +418,8 @@ def server(input, output, session):
         
         map_obj.add_layer(route_layer)
         
-        # Re-add marker to be on top
         if dest_marker in map_obj.layers:
             map_obj.remove_layer(dest_marker)
             map_obj.add_layer(dest_marker)
-
 
 app = App(app_ui, server)

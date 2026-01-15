@@ -69,6 +69,7 @@ def process_network(day_id=1):
 
     # Adds route name columns
     routes['route_name'] = routes['route_short_name'].fillna("Skytrain") + " " + routes['route_long_name']
+    routes['route_name'] = routes['route_name'].str.replace("SkyTrain SeaBus", "SeaBus")
     edges = edges.merge(trips[['route_id', 'trip_id', 'shape_id']], on='trip_id', how='left')
     edges = edges.merge(routes[['route_id', 'route_name']], on='route_id', how='left')
 
