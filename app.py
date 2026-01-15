@@ -1,8 +1,9 @@
-from shiny import App, reactive, ui, req
+from shiny import App, reactive, ui, req, render
 from shinywidgets import output_widget, render_widget
 from ipywidgets import Layout
 from ipyleaflet import AwesomeIcon
 from shapely.geometry import Point, shape
+import ipywidgets as widgets
 import ipyleaflet as L
 import geopandas as gpd
 import json
@@ -104,6 +105,9 @@ app_ui = ui.page_sidebar(
         output_widget("map_display", width="100%", height="100%"), 
         style="padding: 0; height: 90vh"
     ),
+
+    ui.output_ui("route_instructions_panel"),
+        style="padding: 0; height: 90vh; position: relative;"
 )
 
 
@@ -294,7 +298,7 @@ def server(input, output, session):
         print(f"Calculating Route from {orig} to {dest}")
         
         try:
-            route_gdf = analysis.get_route(
+            gdf, steps = analysis.get_route(
                 G=G,
                 start_lat=orig[0],
                 start_lon=orig[1],
@@ -303,7 +307,7 @@ def server(input, output, session):
                 walk_speed_mps=speed,
                 max_walk_km=walk
             )
-            return route_gdf
+            return gdf, steps
         except AttributeError:
             print("Error: not found.")
             return None
@@ -351,7 +355,7 @@ def server(input, output, session):
     # ---------------------------------------------------------
     @reactive.Effect
     def draw_route():
-        route_gdf = route_data()
+        route_gdf, _ = route_data()
 
         # Clear existing route
         for layer in map_obj.layers:
@@ -375,5 +379,6 @@ def server(input, output, session):
         if dest_marker in map_obj.layers:
             map_obj.remove_layer(dest_marker)
             map_obj.add_layer(dest_marker)
+
 
 app = App(app_ui, server)

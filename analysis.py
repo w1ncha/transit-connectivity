@@ -278,6 +278,7 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
     print(f"\n--- PATH FOUND ({total_time:.1f} mins) ---")
     
     step_count = 1
+    steps = []
     
     for i in range(len(node_path) - 1):
         u = node_path[i]
@@ -286,13 +287,13 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
         # 1. (User -> First Stop)
         if u == "USER_START":
             stop_name = STOPS_DICT.get(v, {}).get('name', v)
-            print(f"{step_count}. Walk to {stop_name}")
+            steps.append(f"{step_count}. Walk to {stop_name}")
             step_count += 1
             continue
             
         # 2. (Last Stop -> User)
         if v == "USER_END":
-            print(f"{step_count}. Walk to final destination.")
+            steps.append(f"{step_count}. Walk to final destination.")
             step_count += 1
             continue
 
@@ -305,21 +306,23 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
             
             if move_type == 'walk':
                 stop_name_v = STOPS_DICT.get(str(v), {}).get('name', v)
-                print(f"{step_count}. Walk to {stop_name_v} ({weight:.1f} min)")
+                steps.append(f"{step_count}. Walk to {stop_name_v} ({weight:.1f} min)")
+
                 step_count += 1
                 
             elif move_type == 'board':
                 route = edge_data.get('route_id', 'Unknown')
-                print(f"{step_count}. Wait for {route} ({weight:.1f} min avg wait)")
+                steps.append(f"{step_count}. Wait for {route} ({weight:.1f} min avg wait)")
+
                 step_count += 1
                 
             elif move_type == 'travel':
                 base_v = v.split('_')[0]
                 stop_name_v = STOPS_DICT.get(base_v, {}).get('name', base_v)
-                print(f"   -> Ride to {stop_name_v} ({weight:.1f} min)")
+                steps.append(f"   -> Ride to {stop_name_v} ({weight:.1f} min)")
                 
             elif move_type == 'deboard':
-                print(f"   -> Get off vehicle.")
+                steps.append(f"   -> Get off vehicle.")
 
     # 7. CONSTRUCT GEOMETRY
     coords = []
@@ -353,7 +356,7 @@ def get_route(G, start_lat, start_lon, end_lat, end_lon, walk_speed_mps=1.0, max
     coords.append((end_lon, end_lat))
     
     line = LineString(coords)
-    return gpd.GeoDataFrame({'geometry': [line], 'time_min': [total_time]}, crs="EPSG:4326")
+    return gpd.GeoDataFrame({'geometry': [line], 'time_min': [total_time]}, crs="EPSG:4326"), steps
 
 # ==========================================
 # TEST SCRIPT

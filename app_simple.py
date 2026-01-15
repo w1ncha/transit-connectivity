@@ -4,6 +4,7 @@ import os
 import analysis
 import preprocessing
 import graph_builder
+import pickle
 # only run on acquiring new GTFS Data
 # import txt_to_csv
 
@@ -26,8 +27,8 @@ while True:
         continue
     
     preprocessing.process_network(day_id = day_map[day_input])
-    preprocessing.process_transfers()
-    preprocessing.process_stops()
+    # preprocessing.process_transfers()
+    # preprocessing.process_stops()
     # preprocessing.str_check()
     break # Move to the next loop
 
@@ -43,7 +44,12 @@ while True:
         print("Invalid format or time. Please use HH:MM (e.g., 14:30).")
         continue
 
+    if os.path.exists('data/network_edges.pkl'):
+            with open('data/network_edges.pkl', 'rb') as f:
+                network_edges = pickle.load(f)
+            
     current_graph = graph_builder.build_graph(
+        network_edges=network_edges,
         current_time_str=time_input, 
         window_mins=60,
     )
@@ -140,7 +146,7 @@ while True:
         print("Invalid input. Please enter numeric degrees.")
         continue
 
-route_line = analysis.get_route(
+route_line, steps = analysis.get_route(
     G = current_graph,
     start_lat = start_lat,
     start_lon = start_lon,
@@ -154,4 +160,6 @@ if route_line is None or route_line.empty:
     print("Error. Please try again.")
 else:
     route_line.to_file("output/route.geojson", driver="GeoJSON")
+    for step in steps:
+        print(step)
     print("A geojson file has been generated in 'output/' detailing the route.")
