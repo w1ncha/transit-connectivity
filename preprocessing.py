@@ -1,4 +1,7 @@
 import pandas as pd
+import geopandas as gpd
+import shapely
+from shapely.geometry import LineString
 import pickle
 import pprint
 
@@ -31,7 +34,7 @@ shapes = pd.read_csv('txt_data/shapes.txt', dtype={'shape_id': str})
 
 # Choose service day
 
-def process_network(day_id=1):
+def process_network(day_id=1, toggles=("bridges", "skytrain")):
 
     target_service_id = str(day_id)
     trips['service_id'] = trips['service_id'].astype(str)
@@ -69,7 +72,7 @@ def process_network(day_id=1):
 
     # Adds route name columns
     routes['route_name'] = routes['route_short_name'].fillna("Skytrain") + " " + routes['route_long_name']
-    routes['route_name'] = routes['route_name'].str.replace("SkyTrain SeaBus", "SeaBus")
+    routes['route_name'] = routes['route_name'].str.replace("Skytrain SeaBus", "SeaBus")
     edges = edges.merge(trips[['route_id', 'trip_id', 'shape_id']], on='trip_id', how='left')
     edges = edges.merge(routes[['route_id', 'route_name']], on='route_id', how='left')
 
@@ -78,8 +81,28 @@ def process_network(day_id=1):
     edges.drop(columns=cols_to_remove, inplace=True)
     edges = edges[['route_name', 'trip_id', 'stop_id', 'next_stop_id', 'stop_sequence', 'arrival_sec', 'duration', 'shape_id', 'shape_dist_traveled', 'next_shape_dist_traveled']]
     edges = edges.sort_values(['route_name', 'trip_id', 'stop_sequence'])
-    edges.to_csv('data/edges.csv', index=False)
+    # edges.to_csv('data/edges.csv', index=False)
     # routes.to_csv('data/routes.txt', index=False)
+
+    # Infrastructure toggles: Bridges
+    if "bridges" not in toggles:
+        edges = edges.merge(stops[['stop_id', 'stop_lon', 'stop_lat']], on='stop_id', how='left').rename(columns={'stop_lon': 'x1', 'stop_lat': 'y1'})
+        edges = edges.merge(stops[['stop_id', 'stop_lon', 'stop_lat']], left_on='next_stop_id', right_on='stop_id', how='left', suffixes=('', '_drop')).rename(columns={'stop_lon': 'x2', 'stop_lat': 'y2'})
+        edges = edges.dropna(subset=['x1', 'y1', 'x2', 'y2'])
+
+        geoms = [LineString([(x1, y1), (x2, y2)])
+            for x1, y1, x2, y2 in zip(edges['x1'], edges['y1'], edges['x2'], edges['y2'])]
+        
+        edges_gdf = gpd.GeoDataFrame(edges, geometry = geoms, crs="EPSG:4326")
+        bridges_gdf = gpd.read_file("data/bridges.geojson")
+        idx_to_remove = gpd.sjoin(edges_gdf, bridges_gdf, how='inner', predicate='intersects').index
+        edges_gdf = edges_gdf.drop(index=idx_to_remove).drop(columns=['geometry', 'x1', 'y1', 'x2', 'y2', 'stop_id_drop'])
+        edges = pd.DataFrame(edges_gdf)
+
+    # Infrastructure toggles: Skytrain
+    if "skytrain" not in toggles:
+        idx_to_remove = edges[edges['route_name'].str.contains('skytrain', case=False, na=False)].index
+        edges = edges.drop(index = idx_to_remove)
 
     # create dictionary with
     # key: ('Stop_A', 'Stop_B', 'Route_Name')x
@@ -286,7 +309,7 @@ def str_check():
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
 
 if __name__ == "__main__":
-    #  process_network()
+    process_network()
     process_stops()
     process_transfers()
     process_shapes()

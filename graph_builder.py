@@ -39,7 +39,7 @@ def parse_time(time_str):
 # GRAPH BUILDER
 # =================
 
-def build_graph(network_edges, current_time_str, window_mins=60, active_toggles=None, frequency_modifier=1.0):
+def build_graph(network_edges, current_time_str, window_mins=60, frequency_modifier=1.0):
 
     # convert time to seconds
     center_sec = parse_time(current_time_str)

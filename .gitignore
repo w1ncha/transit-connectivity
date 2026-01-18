@@ -2,6 +2,7 @@ txt_data/*
 csv_data/
 data/*
 !data/metro_vancouver_land_poly.geojson
+!data/bridges.geojson
 output/*.geojson
 .venv/
 __pycache__/

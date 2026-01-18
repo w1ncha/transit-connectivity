@@ -107,7 +107,6 @@ while True:
             if not final_gdf.empty:
                 print("Saving 'isochrone.geojson'...")
                 final_gdf.to_file("output/isochrone.geojson", driver="GeoJSON")
-                final_gdf.to_file("data/isochrone.geojson", driver="GeoJSON")
 
                 print("A geojson file has been generated for input to GIS in 'output/'.")
                 break

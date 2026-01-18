@@ -35,11 +35,11 @@ app_ui = ui.page_sidebar(
         ui.input_slider("budget", "Time Budget", 5, 60, 30),
         ui.input_slider("frequency", "Frequency Modifier", 0.1, 3.0, 1.0, step=0.1),
         ui.input_slider("walk_speed", "Walk Speed (m/s)", 0.5, 2.5, 1.2, step=0.1),
-        ui.input_slider("max_walk", "Max Walk Distance (km)", 0.1, 3.0, 1.0, step=0.1),
+        ui.input_slider("max_walk", "Max Walk Distance (km)", 0.1, 2.0, 0.5, step=0.1),
 
         ui.div(
             ui.input_checkbox_group("toggles", "Infrastructure Toggles", 
-                                    {"skytrain": "SkyTrain", "bridges": "Bridges"}, 
+                                    {"skytrain": "SkyTrain", "bridges": "Major Bridges"}, 
                                     selected=["skytrain", "bridges"]),
             style="margin-bottom: -10px;" 
         ),
@@ -205,14 +205,17 @@ def server(input, output, session):
         input.submit() 
         with reactive.isolate():
             selected_day = input.day()
+            selected_toggles = input.toggles()
 
-        if selected_day != cache_state["last_day"]:
+        if selected_day != cache_state["last_day"] or selected_toggles != cache_state["last_toggles"]:
             day_map = {
                 "Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 1, 
                 "Friday": 1, "Saturday": 2, "Sunday": 3
             }
-            preprocessing.process_network(day_id=day_map[selected_day])
+            preprocessing.process_network(day_id=day_map[selected_day], toggles = selected_toggles)
+            print(f"Generating network with day={selected_day} and toggles={selected_toggles}")
             cache_state["last_day"] = selected_day
+            cache_state["last_toggles"] = selected_toggles
         
         if os.path.exists('data/network_edges.pkl'):
             with open('data/network_edges.pkl', 'rb') as f:
