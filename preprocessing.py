@@ -310,7 +310,7 @@ def str_check():
         print(f"Transfer Nodes: {type(first_key[0])} (Should be str)")
 
 if __name__ == "__main__":
-    process_network()
+    # process_network()
     process_stops()
     process_transfers()
     process_shapes()

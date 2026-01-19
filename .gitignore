@@ -11,3 +11,4 @@ testing.ipynb
 transfers_process.py
 geoprocessing.py
 rsconnect-python/*
+.rscignore
