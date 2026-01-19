@@ -207,20 +207,29 @@ def server(input, output, session):
             selected_day = input.day()
             selected_toggles = input.toggles()
 
-        if selected_day != cache_state["last_day"] or selected_toggles != cache_state["last_toggles"]:
-            day_map = {
-                "Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 1, 
-                "Friday": 1, "Saturday": 2, "Sunday": 3
+        day_map = {
+                "Monday": 1, "Tuesday": 1, "Wednesday": 1, "Thursday": 1, "Friday": 1, "Saturday": 2, "Sunday": 3
             }
+        
+        # CACHE CHECK
+        path = f'data/network_edges_{day_map[selected_day]}_{"_".join(selected_toggles)}.pkl'
+
+        # RUN PREPROCESSING IF NETWORK IS NEW
+        if not os.path.exists(path):
             preprocessing.process_network(day_id=day_map[selected_day], toggles = selected_toggles)
             print(f"Generating network with day={selected_day} and toggles={selected_toggles}")
-            cache_state["last_day"] = selected_day
+            cache_state["last_day"] = selected_day                
             cache_state["last_toggles"] = selected_toggles
-        
-        if os.path.exists('data/network_edges.pkl'):
-            with open('data/network_edges.pkl', 'rb') as f:
+
+            with open(path, 'rb') as f:
                 return pickle.load(f)
-        return None
+        
+        # OTHERWISE RETRIEVE NETWORK
+        else:
+            print(f"Accessing network with day={selected_day} and toggles={selected_toggles}")
+            with open(path, 'rb') as f:
+                return pickle.load(f)
+
 
     @reactive.Calc
     def current_graph():

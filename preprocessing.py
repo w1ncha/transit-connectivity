@@ -141,10 +141,11 @@ def process_network(day_id=1, toggles=("bridges", "skytrain")):
     print(f"Network dictionary complete. Created {len(network_edges)} unique route segments. Saving...")
 
     # save to pickle file
-    with open('data/network_edges.pkl', 'wb') as f:
+    path = f'data/network_edges_{day_id}_{"_".join(toggles)}.pkl'
+    with open(path, 'wb') as f:
         pickle.dump(dict(network_edges), f)
 
-    return 'data/network_edges.pkl'
+    return path
 
 # ============================
 #  TRANSFER EDGES FILE
